@@ -6,4 +6,8 @@
  * @see https://github.com/metaplex-foundation/kinobi
  */
 
+export * from './allocate';
+export * from './clearData';
+export * from './close';
 export * from './create';
+export * from './writeData';

@@ -54,6 +54,75 @@ export class SerializationErrorError extends ProgramError {
 codeToErrorMap.set(0x2, SerializationErrorError);
 nameToErrorMap.set('SerializationError', SerializationErrorError);
 
+/** AlreadyInitialized: The account has already been initialized */
+export class AlreadyInitializedError extends ProgramError {
+  override readonly name: string = 'AlreadyInitialized';
+
+  readonly code: number = 0x3; // 3
+
+  constructor(program: Program, cause?: Error) {
+    super('The account has already been initialized', program, cause);
+  }
+}
+codeToErrorMap.set(0x3, AlreadyInitializedError);
+nameToErrorMap.set('AlreadyInitialized', AlreadyInitializedError);
+
+/** DerivedKeyInvalid: The key for the account is invalid. */
+export class DerivedKeyInvalidError extends ProgramError {
+  override readonly name: string = 'DerivedKeyInvalid';
+
+  readonly code: number = 0x4; // 4
+
+  constructor(program: Program, cause?: Error) {
+    super('The key for the account is invalid.', program, cause);
+  }
+}
+codeToErrorMap.set(0x4, DerivedKeyInvalidError);
+nameToErrorMap.set('DerivedKeyInvalid', DerivedKeyInvalidError);
+
+/** NotInitialized: The account has not yet been initialized */
+export class NotInitializedError extends ProgramError {
+  override readonly name: string = 'NotInitialized';
+
+  readonly code: number = 0x5; // 5
+
+  constructor(program: Program, cause?: Error) {
+    super('The account has not yet been initialized', program, cause);
+  }
+}
+codeToErrorMap.set(0x5, NotInitializedError);
+nameToErrorMap.set('NotInitialized', NotInitializedError);
+
+/** InvalidAuthority: The payer does not have authority to perform this action. */
+export class InvalidAuthorityError extends ProgramError {
+  override readonly name: string = 'InvalidAuthority';
+
+  readonly code: number = 0x6; // 6
+
+  constructor(program: Program, cause?: Error) {
+    super(
+      'The payer does not have authority to perform this action.',
+      program,
+      cause
+    );
+  }
+}
+codeToErrorMap.set(0x6, InvalidAuthorityError);
+nameToErrorMap.set('InvalidAuthority', InvalidAuthorityError);
+
+/** NumericalOverflow: Numerical Overflow */
+export class NumericalOverflowError extends ProgramError {
+  override readonly name: string = 'NumericalOverflow';
+
+  readonly code: number = 0x7; // 7
+
+  constructor(program: Program, cause?: Error) {
+    super('Numerical Overflow', program, cause);
+  }
+}
+codeToErrorMap.set(0x7, NumericalOverflowError);
+nameToErrorMap.set('NumericalOverflow', NumericalOverflowError);
+
 /**
  * Attempts to resolve a custom program error from the provided error code.
  * @category Errors

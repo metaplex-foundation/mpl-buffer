@@ -12,48 +12,54 @@ use solana_program::pubkey::Pubkey;
 
 #[derive(BorshSerialize, BorshDeserialize, Clone, Debug, Eq, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub struct MyPdaAccount {
+pub struct BufferMetadata {
     pub key: Key,
+    #[cfg_attr(
+        feature = "serde",
+        serde(with = "serde_with::As::<serde_with::DisplayFromStr>")
+    )]
+    pub buffer: Pubkey,
     pub bump: u8,
+    #[cfg_attr(
+        feature = "serde",
+        serde(with = "serde_with::As::<serde_with::DisplayFromStr>")
+    )]
+    pub authority: Pubkey,
 }
 
-impl MyPdaAccount {
-    pub const LEN: usize = 2;
+impl BufferMetadata {
+    pub const LEN: usize = 66;
 
     /// Prefix values used to generate a PDA for this account.
     ///
     /// Values are positional and appear in the following order:
     ///
-    ///   0. `MyPdaAccount::PREFIX`
+    ///   0. `BufferMetadata::PREFIX`
     ///   1. `crate::MPL_BUFFER_ID`
-    ///   2. authority (`Pubkey`)
-    ///   3. name (`String`)
-    pub const PREFIX: &'static [u8] = "myPdaAccount".as_bytes();
+    ///   2. buffer (`Pubkey`)
+    pub const PREFIX: &'static [u8] = "Buffer".as_bytes();
 
     pub fn create_pda(
-        authority: Pubkey,
-        name: String,
+        buffer: Pubkey,
         bump: u8,
     ) -> Result<solana_program::pubkey::Pubkey, solana_program::pubkey::PubkeyError> {
         solana_program::pubkey::Pubkey::create_program_address(
             &[
-                "myPdaAccount".as_bytes(),
+                "Buffer".as_bytes(),
                 crate::MPL_BUFFER_ID.as_ref(),
-                authority.as_ref(),
-                name.to_string().as_ref(),
+                buffer.as_ref(),
                 &[bump],
             ],
             &crate::MPL_BUFFER_ID,
         )
     }
 
-    pub fn find_pda(authority: &Pubkey, name: String) -> (solana_program::pubkey::Pubkey, u8) {
+    pub fn find_pda(buffer: &Pubkey) -> (solana_program::pubkey::Pubkey, u8) {
         solana_program::pubkey::Pubkey::find_program_address(
             &[
-                "myPdaAccount".as_bytes(),
+                "Buffer".as_bytes(),
                 crate::MPL_BUFFER_ID.as_ref(),
-                authority.as_ref(),
-                name.to_string().as_ref(),
+                buffer.as_ref(),
             ],
             &crate::MPL_BUFFER_ID,
         )
@@ -66,7 +72,7 @@ impl MyPdaAccount {
     }
 }
 
-impl<'a> TryFrom<&solana_program::account_info::AccountInfo<'a>> for MyPdaAccount {
+impl<'a> TryFrom<&solana_program::account_info::AccountInfo<'a>> for BufferMetadata {
     type Error = std::io::Error;
 
     fn try_from(

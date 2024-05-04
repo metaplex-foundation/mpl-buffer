@@ -19,6 +19,21 @@ pub enum MplBufferError {
     /// 2 (0x2) - Error serializing account
     #[error("Error serializing account")]
     SerializationError,
+    /// 3 (0x3) - The account has already been initialized
+    #[error("The account has already been initialized")]
+    AlreadyInitialized,
+    /// 4 (0x4) - The key for the account is invalid.
+    #[error("The key for the account is invalid.")]
+    DerivedKeyInvalid,
+    /// 5 (0x5) - The account has not yet been initialized
+    #[error("The account has not yet been initialized")]
+    NotInitialized,
+    /// 6 (0x6) - The payer does not have authority to perform this action.
+    #[error("The payer does not have authority to perform this action.")]
+    InvalidAuthority,
+    /// 7 (0x7) - Numerical Overflow
+    #[error("Numerical Overflow")]
+    NumericalOverflow,
 }
 
 impl solana_program::program_error::PrintProgramError for MplBufferError {

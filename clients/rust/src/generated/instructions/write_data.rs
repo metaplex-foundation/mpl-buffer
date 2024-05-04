@@ -9,32 +9,36 @@ use borsh::BorshDeserialize;
 use borsh::BorshSerialize;
 
 /// Accounts.
-pub struct Create {
+pub struct WriteData {
     /// The account where data is stored.
     pub buffer: solana_program::pubkey::Pubkey,
     /// The account to store the buffer account's metadata in.
     pub buffer_metadata: solana_program::pubkey::Pubkey,
-    /// The account paying for the storage fees.
+    /// The account that will pay for the rent.
     pub payer: solana_program::pubkey::Pubkey,
     /// The authority of the buffer account.
     pub authority: Option<solana_program::pubkey::Pubkey>,
-    /// The system program
+    /// System program
     pub system_program: solana_program::pubkey::Pubkey,
 }
 
-impl Create {
-    pub fn instruction(&self) -> solana_program::instruction::Instruction {
-        self.instruction_with_remaining_accounts(&[])
+impl WriteData {
+    pub fn instruction(
+        &self,
+        args: WriteDataInstructionArgs,
+    ) -> solana_program::instruction::Instruction {
+        self.instruction_with_remaining_accounts(args, &[])
     }
     #[allow(clippy::vec_init_then_push)]
     pub fn instruction_with_remaining_accounts(
         &self,
+        args: WriteDataInstructionArgs,
         remaining_accounts: &[solana_program::instruction::AccountMeta],
     ) -> solana_program::instruction::Instruction {
         let mut accounts = Vec::with_capacity(5 + remaining_accounts.len());
         accounts.push(solana_program::instruction::AccountMeta::new(
             self.buffer,
-            true,
+            false,
         ));
         accounts.push(solana_program::instruction::AccountMeta::new(
             self.buffer_metadata,
@@ -58,7 +62,9 @@ impl Create {
             false,
         ));
         accounts.extend_from_slice(remaining_accounts);
-        let data = CreateInstructionData::new().try_to_vec().unwrap();
+        let mut data = WriteDataInstructionData::new().try_to_vec().unwrap();
+        let mut args = args.try_to_vec().unwrap();
+        data.append(&mut args);
 
         solana_program::instruction::Instruction {
             program_id: crate::MPL_BUFFER_ID,
@@ -69,36 +75,45 @@ impl Create {
 }
 
 #[derive(BorshDeserialize, BorshSerialize)]
-struct CreateInstructionData {
+struct WriteDataInstructionData {
     discriminator: u8,
 }
 
-impl CreateInstructionData {
+impl WriteDataInstructionData {
     fn new() -> Self {
-        Self { discriminator: 0 }
+        Self { discriminator: 3 }
     }
 }
 
-/// Instruction builder for `Create`.
+#[derive(BorshSerialize, BorshDeserialize, Clone, Debug, Eq, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub struct WriteDataInstructionArgs {
+    pub offset: u64,
+    pub value: Vec<u8>,
+}
+
+/// Instruction builder for `WriteData`.
 ///
 /// ### Accounts:
 ///
-///   0. `[writable, signer]` buffer
+///   0. `[writable]` buffer
 ///   1. `[writable]` buffer_metadata
 ///   2. `[writable, signer]` payer
 ///   3. `[signer, optional]` authority
 ///   4. `[optional]` system_program (default to `11111111111111111111111111111111`)
 #[derive(Default)]
-pub struct CreateBuilder {
+pub struct WriteDataBuilder {
     buffer: Option<solana_program::pubkey::Pubkey>,
     buffer_metadata: Option<solana_program::pubkey::Pubkey>,
     payer: Option<solana_program::pubkey::Pubkey>,
     authority: Option<solana_program::pubkey::Pubkey>,
     system_program: Option<solana_program::pubkey::Pubkey>,
+    offset: Option<u64>,
+    value: Option<Vec<u8>>,
     __remaining_accounts: Vec<solana_program::instruction::AccountMeta>,
 }
 
-impl CreateBuilder {
+impl WriteDataBuilder {
     pub fn new() -> Self {
         Self::default()
     }
@@ -117,7 +132,7 @@ impl CreateBuilder {
         self.buffer_metadata = Some(buffer_metadata);
         self
     }
-    /// The account paying for the storage fees.
+    /// The account that will pay for the rent.
     #[inline(always)]
     pub fn payer(&mut self, payer: solana_program::pubkey::Pubkey) -> &mut Self {
         self.payer = Some(payer);
@@ -131,10 +146,20 @@ impl CreateBuilder {
         self
     }
     /// `[optional account, default to '11111111111111111111111111111111']`
-    /// The system program
+    /// System program
     #[inline(always)]
     pub fn system_program(&mut self, system_program: solana_program::pubkey::Pubkey) -> &mut Self {
         self.system_program = Some(system_program);
+        self
+    }
+    #[inline(always)]
+    pub fn offset(&mut self, offset: u64) -> &mut Self {
+        self.offset = Some(offset);
+        self
+    }
+    #[inline(always)]
+    pub fn value(&mut self, value: Vec<u8>) -> &mut Self {
+        self.value = Some(value);
         self
     }
     /// Add an aditional account to the instruction.
@@ -157,7 +182,7 @@ impl CreateBuilder {
     }
     #[allow(clippy::clone_on_copy)]
     pub fn instruction(&self) -> solana_program::instruction::Instruction {
-        let accounts = Create {
+        let accounts = WriteData {
             buffer: self.buffer.expect("buffer is not set"),
             buffer_metadata: self.buffer_metadata.expect("buffer_metadata is not set"),
             payer: self.payer.expect("payer is not set"),
@@ -166,45 +191,52 @@ impl CreateBuilder {
                 .system_program
                 .unwrap_or(solana_program::pubkey!("11111111111111111111111111111111")),
         };
+        let args = WriteDataInstructionArgs {
+            offset: self.offset.clone().expect("offset is not set"),
+            value: self.value.clone().expect("value is not set"),
+        };
 
-        accounts.instruction_with_remaining_accounts(&self.__remaining_accounts)
+        accounts.instruction_with_remaining_accounts(args, &self.__remaining_accounts)
     }
 }
 
-/// `create` CPI accounts.
-pub struct CreateCpiAccounts<'a, 'b> {
+/// `write_data` CPI accounts.
+pub struct WriteDataCpiAccounts<'a, 'b> {
     /// The account where data is stored.
     pub buffer: &'b solana_program::account_info::AccountInfo<'a>,
     /// The account to store the buffer account's metadata in.
     pub buffer_metadata: &'b solana_program::account_info::AccountInfo<'a>,
-    /// The account paying for the storage fees.
+    /// The account that will pay for the rent.
     pub payer: &'b solana_program::account_info::AccountInfo<'a>,
     /// The authority of the buffer account.
     pub authority: Option<&'b solana_program::account_info::AccountInfo<'a>>,
-    /// The system program
+    /// System program
     pub system_program: &'b solana_program::account_info::AccountInfo<'a>,
 }
 
-/// `create` CPI instruction.
-pub struct CreateCpi<'a, 'b> {
+/// `write_data` CPI instruction.
+pub struct WriteDataCpi<'a, 'b> {
     /// The program to invoke.
     pub __program: &'b solana_program::account_info::AccountInfo<'a>,
     /// The account where data is stored.
     pub buffer: &'b solana_program::account_info::AccountInfo<'a>,
     /// The account to store the buffer account's metadata in.
     pub buffer_metadata: &'b solana_program::account_info::AccountInfo<'a>,
-    /// The account paying for the storage fees.
+    /// The account that will pay for the rent.
     pub payer: &'b solana_program::account_info::AccountInfo<'a>,
     /// The authority of the buffer account.
     pub authority: Option<&'b solana_program::account_info::AccountInfo<'a>>,
-    /// The system program
+    /// System program
     pub system_program: &'b solana_program::account_info::AccountInfo<'a>,
+    /// The arguments for the instruction.
+    pub __args: WriteDataInstructionArgs,
 }
 
-impl<'a, 'b> CreateCpi<'a, 'b> {
+impl<'a, 'b> WriteDataCpi<'a, 'b> {
     pub fn new(
         program: &'b solana_program::account_info::AccountInfo<'a>,
-        accounts: CreateCpiAccounts<'a, 'b>,
+        accounts: WriteDataCpiAccounts<'a, 'b>,
+        args: WriteDataInstructionArgs,
     ) -> Self {
         Self {
             __program: program,
@@ -213,6 +245,7 @@ impl<'a, 'b> CreateCpi<'a, 'b> {
             payer: accounts.payer,
             authority: accounts.authority,
             system_program: accounts.system_program,
+            __args: args,
         }
     }
     #[inline(always)]
@@ -251,7 +284,7 @@ impl<'a, 'b> CreateCpi<'a, 'b> {
         let mut accounts = Vec::with_capacity(5 + remaining_accounts.len());
         accounts.push(solana_program::instruction::AccountMeta::new(
             *self.buffer.key,
-            true,
+            false,
         ));
         accounts.push(solana_program::instruction::AccountMeta::new(
             *self.buffer_metadata.key,
@@ -283,7 +316,9 @@ impl<'a, 'b> CreateCpi<'a, 'b> {
                 is_writable: remaining_account.2,
             })
         });
-        let data = CreateInstructionData::new().try_to_vec().unwrap();
+        let mut data = WriteDataInstructionData::new().try_to_vec().unwrap();
+        let mut args = self.__args.try_to_vec().unwrap();
+        data.append(&mut args);
 
         let instruction = solana_program::instruction::Instruction {
             program_id: crate::MPL_BUFFER_ID,
@@ -311,28 +346,30 @@ impl<'a, 'b> CreateCpi<'a, 'b> {
     }
 }
 
-/// Instruction builder for `Create` via CPI.
+/// Instruction builder for `WriteData` via CPI.
 ///
 /// ### Accounts:
 ///
-///   0. `[writable, signer]` buffer
+///   0. `[writable]` buffer
 ///   1. `[writable]` buffer_metadata
 ///   2. `[writable, signer]` payer
 ///   3. `[signer, optional]` authority
 ///   4. `[]` system_program
-pub struct CreateCpiBuilder<'a, 'b> {
-    instruction: Box<CreateCpiBuilderInstruction<'a, 'b>>,
+pub struct WriteDataCpiBuilder<'a, 'b> {
+    instruction: Box<WriteDataCpiBuilderInstruction<'a, 'b>>,
 }
 
-impl<'a, 'b> CreateCpiBuilder<'a, 'b> {
+impl<'a, 'b> WriteDataCpiBuilder<'a, 'b> {
     pub fn new(program: &'b solana_program::account_info::AccountInfo<'a>) -> Self {
-        let instruction = Box::new(CreateCpiBuilderInstruction {
+        let instruction = Box::new(WriteDataCpiBuilderInstruction {
             __program: program,
             buffer: None,
             buffer_metadata: None,
             payer: None,
             authority: None,
             system_program: None,
+            offset: None,
+            value: None,
             __remaining_accounts: Vec::new(),
         });
         Self { instruction }
@@ -355,7 +392,7 @@ impl<'a, 'b> CreateCpiBuilder<'a, 'b> {
         self.instruction.buffer_metadata = Some(buffer_metadata);
         self
     }
-    /// The account paying for the storage fees.
+    /// The account that will pay for the rent.
     #[inline(always)]
     pub fn payer(&mut self, payer: &'b solana_program::account_info::AccountInfo<'a>) -> &mut Self {
         self.instruction.payer = Some(payer);
@@ -371,13 +408,23 @@ impl<'a, 'b> CreateCpiBuilder<'a, 'b> {
         self.instruction.authority = authority;
         self
     }
-    /// The system program
+    /// System program
     #[inline(always)]
     pub fn system_program(
         &mut self,
         system_program: &'b solana_program::account_info::AccountInfo<'a>,
     ) -> &mut Self {
         self.instruction.system_program = Some(system_program);
+        self
+    }
+    #[inline(always)]
+    pub fn offset(&mut self, offset: u64) -> &mut Self {
+        self.instruction.offset = Some(offset);
+        self
+    }
+    #[inline(always)]
+    pub fn value(&mut self, value: Vec<u8>) -> &mut Self {
+        self.instruction.value = Some(value);
         self
     }
     /// Add an additional account to the instruction.
@@ -421,7 +468,11 @@ impl<'a, 'b> CreateCpiBuilder<'a, 'b> {
         &self,
         signers_seeds: &[&[&[u8]]],
     ) -> solana_program::entrypoint::ProgramResult {
-        let instruction = CreateCpi {
+        let args = WriteDataInstructionArgs {
+            offset: self.instruction.offset.clone().expect("offset is not set"),
+            value: self.instruction.value.clone().expect("value is not set"),
+        };
+        let instruction = WriteDataCpi {
             __program: self.instruction.__program,
 
             buffer: self.instruction.buffer.expect("buffer is not set"),
@@ -439,6 +490,7 @@ impl<'a, 'b> CreateCpiBuilder<'a, 'b> {
                 .instruction
                 .system_program
                 .expect("system_program is not set"),
+            __args: args,
         };
         instruction.invoke_signed_with_remaining_accounts(
             signers_seeds,
@@ -447,13 +499,15 @@ impl<'a, 'b> CreateCpiBuilder<'a, 'b> {
     }
 }
 
-struct CreateCpiBuilderInstruction<'a, 'b> {
+struct WriteDataCpiBuilderInstruction<'a, 'b> {
     __program: &'b solana_program::account_info::AccountInfo<'a>,
     buffer: Option<&'b solana_program::account_info::AccountInfo<'a>>,
     buffer_metadata: Option<&'b solana_program::account_info::AccountInfo<'a>>,
     payer: Option<&'b solana_program::account_info::AccountInfo<'a>>,
     authority: Option<&'b solana_program::account_info::AccountInfo<'a>>,
     system_program: Option<&'b solana_program::account_info::AccountInfo<'a>>,
+    offset: Option<u64>,
+    value: Option<Vec<u8>>,
     /// Additional instruction accounts `(AccountInfo, is_writable, is_signer)`.
     __remaining_accounts: Vec<(
         &'b solana_program::account_info::AccountInfo<'a>,

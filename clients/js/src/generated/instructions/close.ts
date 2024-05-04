@@ -7,7 +7,6 @@
  */
 
 import {
-  ACCOUNT_HEADER_SIZE,
   Context,
   Pda,
   PublicKey,
@@ -21,7 +20,6 @@ import {
   struct,
   u8,
 } from '@metaplex-foundation/umi/serializers';
-import { getBufferSize } from '../accounts';
 import {
   ResolvedAccount,
   ResolvedAccountsWithIndices,
@@ -29,40 +27,40 @@ import {
 } from '../shared';
 
 // Accounts.
-export type CreateInstructionAccounts = {
+export type CloseInstructionAccounts = {
   /** The account where data is stored. */
-  buffer: Signer;
+  buffer: PublicKey | Pda;
   /** The account to store the buffer account's metadata in. */
   bufferMetadata: PublicKey | Pda;
-  /** The account paying for the storage fees. */
+  /** The account that will pay for the rent. */
   payer?: Signer;
   /** The authority of the buffer account. */
   authority?: Signer;
-  /** The system program */
+  /** System program */
   systemProgram?: PublicKey | Pda;
 };
 
 // Data.
-export type CreateInstructionData = { discriminator: number };
+export type CloseInstructionData = { discriminator: number };
 
-export type CreateInstructionDataArgs = {};
+export type CloseInstructionDataArgs = {};
 
-export function getCreateInstructionDataSerializer(): Serializer<
-  CreateInstructionDataArgs,
-  CreateInstructionData
+export function getCloseInstructionDataSerializer(): Serializer<
+  CloseInstructionDataArgs,
+  CloseInstructionData
 > {
-  return mapSerializer<CreateInstructionDataArgs, any, CreateInstructionData>(
-    struct<CreateInstructionData>([['discriminator', u8()]], {
-      description: 'CreateInstructionData',
+  return mapSerializer<CloseInstructionDataArgs, any, CloseInstructionData>(
+    struct<CloseInstructionData>([['discriminator', u8()]], {
+      description: 'CloseInstructionData',
     }),
-    (value) => ({ ...value, discriminator: 0 })
-  ) as Serializer<CreateInstructionDataArgs, CreateInstructionData>;
+    (value) => ({ ...value, discriminator: 1 })
+  ) as Serializer<CloseInstructionDataArgs, CloseInstructionData>;
 }
 
 // Instruction.
-export function create(
+export function close(
   context: Pick<Context, 'payer' | 'programs'>,
-  input: CreateInstructionAccounts
+  input: CloseInstructionAccounts
 ): TransactionBuilder {
   // Program ID.
   const programId = context.programs.getPublicKey(
@@ -124,10 +122,10 @@ export function create(
   );
 
   // Data.
-  const data = getCreateInstructionDataSerializer().serialize({});
+  const data = getCloseInstructionDataSerializer().serialize({});
 
   // Bytes Created On Chain.
-  const bytesCreatedOnChain = getBufferSize() + ACCOUNT_HEADER_SIZE;
+  const bytesCreatedOnChain = 0;
 
   return transactionBuilder([
     { instruction: { keys, programId, data }, signers, bytesCreatedOnChain },

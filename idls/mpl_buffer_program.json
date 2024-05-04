@@ -6,19 +6,19 @@
       "name": "Create",
       "accounts": [
         {
-          "name": "address",
+          "name": "buffer",
           "isMut": true,
           "isSigner": true,
           "docs": [
-            "The address of the new account"
+            "The account where data is stored."
           ]
         },
         {
-          "name": "authority",
-          "isMut": false,
+          "name": "bufferMetadata",
+          "isMut": true,
           "isSigner": false,
           "docs": [
-            "The authority of the new account"
+            "The account to store the buffer account's metadata in."
           ]
         },
         {
@@ -26,7 +26,16 @@
           "isMut": true,
           "isSigner": true,
           "docs": [
-            "The account paying for the storage fees"
+            "The account paying for the storage fees."
+          ]
+        },
+        {
+          "name": "authority",
+          "isMut": false,
+          "isSigner": true,
+          "isOptional": true,
+          "docs": [
+            "The authority of the buffer account."
           ]
         },
         {
@@ -38,23 +47,234 @@
           ]
         }
       ],
+      "args": [],
+      "discriminant": {
+        "type": "u8",
+        "value": 0
+      }
+    },
+    {
+      "name": "Close",
+      "accounts": [
+        {
+          "name": "buffer",
+          "isMut": true,
+          "isSigner": false,
+          "docs": [
+            "The account where data is stored."
+          ]
+        },
+        {
+          "name": "bufferMetadata",
+          "isMut": true,
+          "isSigner": false,
+          "docs": [
+            "The account to store the buffer account's metadata in."
+          ]
+        },
+        {
+          "name": "payer",
+          "isMut": true,
+          "isSigner": true,
+          "docs": [
+            "The account that will pay for the rent."
+          ]
+        },
+        {
+          "name": "authority",
+          "isMut": false,
+          "isSigner": true,
+          "isOptional": true,
+          "docs": [
+            "The authority of the buffer account."
+          ]
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false,
+          "docs": [
+            "System program"
+          ]
+        }
+      ],
+      "args": [],
+      "discriminant": {
+        "type": "u8",
+        "value": 1
+      }
+    },
+    {
+      "name": "Allocate",
+      "accounts": [
+        {
+          "name": "buffer",
+          "isMut": true,
+          "isSigner": false,
+          "docs": [
+            "The account where data is stored."
+          ]
+        },
+        {
+          "name": "bufferMetadata",
+          "isMut": true,
+          "isSigner": false,
+          "docs": [
+            "The account to store the buffer account's metadata in."
+          ]
+        },
+        {
+          "name": "payer",
+          "isMut": true,
+          "isSigner": true,
+          "docs": [
+            "The account that will pay for the rent."
+          ]
+        },
+        {
+          "name": "authority",
+          "isMut": false,
+          "isSigner": true,
+          "isOptional": true,
+          "docs": [
+            "The authority of the buffer account."
+          ]
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false,
+          "docs": [
+            "System program"
+          ]
+        }
+      ],
       "args": [
         {
-          "name": "createArgs",
+          "name": "allocateArgs",
           "type": {
-            "defined": "CreateArgs"
+            "defined": "AllocateArgs"
           }
         }
       ],
       "discriminant": {
         "type": "u8",
-        "value": 0
+        "value": 2
+      }
+    },
+    {
+      "name": "WriteData",
+      "accounts": [
+        {
+          "name": "buffer",
+          "isMut": true,
+          "isSigner": false,
+          "docs": [
+            "The account where data is stored."
+          ]
+        },
+        {
+          "name": "bufferMetadata",
+          "isMut": true,
+          "isSigner": false,
+          "docs": [
+            "The account to store the buffer account's metadata in."
+          ]
+        },
+        {
+          "name": "payer",
+          "isMut": true,
+          "isSigner": true,
+          "docs": [
+            "The account that will pay for the rent."
+          ]
+        },
+        {
+          "name": "authority",
+          "isMut": false,
+          "isSigner": true,
+          "isOptional": true,
+          "docs": [
+            "The authority of the buffer account."
+          ]
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false,
+          "docs": [
+            "System program"
+          ]
+        }
+      ],
+      "args": [
+        {
+          "name": "writeDataArgs",
+          "type": {
+            "defined": "WriteDataArgs"
+          }
+        }
+      ],
+      "discriminant": {
+        "type": "u8",
+        "value": 3
+      }
+    },
+    {
+      "name": "ClearData",
+      "accounts": [
+        {
+          "name": "buffer",
+          "isMut": true,
+          "isSigner": false,
+          "docs": [
+            "The account where data is stored."
+          ]
+        },
+        {
+          "name": "bufferMetadata",
+          "isMut": true,
+          "isSigner": false,
+          "docs": [
+            "The account to store the buffer account's metadata in."
+          ]
+        },
+        {
+          "name": "payer",
+          "isMut": true,
+          "isSigner": true,
+          "docs": [
+            "The account that will pay for the rent."
+          ]
+        },
+        {
+          "name": "authority",
+          "isMut": false,
+          "isSigner": true,
+          "isOptional": true,
+          "docs": [
+            "The authority of the buffer account."
+          ]
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false,
+          "docs": [
+            "System program"
+          ]
+        }
+      ],
+      "args": [],
+      "discriminant": {
+        "type": "u8",
+        "value": 4
       }
     }
   ],
   "accounts": [
     {
-      "name": "MyAccount",
+      "name": "BufferMetadata",
       "type": {
         "kind": "struct",
         "fields": [
@@ -65,32 +285,16 @@
             }
           },
           {
-            "name": "authority",
+            "name": "buffer",
             "type": "publicKey"
-          },
-          {
-            "name": "data",
-            "type": {
-              "defined": "MyData"
-            }
-          }
-        ]
-      }
-    },
-    {
-      "name": "MyPdaAccount",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "key",
-            "type": {
-              "defined": "Key"
-            }
           },
           {
             "name": "bump",
             "type": "u8"
+          },
+          {
+            "name": "authority",
+            "type": "publicKey"
           }
         ]
       }
@@ -98,33 +302,29 @@
   ],
   "types": [
     {
-      "name": "CreateArgs",
+      "name": "AllocateArgs",
       "type": {
         "kind": "struct",
         "fields": [
           {
-            "name": "arg1",
-            "type": "u16"
-          },
-          {
-            "name": "arg2",
-            "type": "u32"
+            "name": "targetSize",
+            "type": "u64"
           }
         ]
       }
     },
     {
-      "name": "MyData",
+      "name": "WriteDataArgs",
       "type": {
         "kind": "struct",
         "fields": [
           {
-            "name": "field1",
-            "type": "u16"
+            "name": "offset",
+            "type": "u64"
           },
           {
-            "name": "field2",
-            "type": "u32"
+            "name": "value",
+            "type": "bytes"
           }
         ]
       }
@@ -138,10 +338,7 @@
             "name": "Uninitialized"
           },
           {
-            "name": "MyAccount"
-          },
-          {
-            "name": "MyPdaAccount"
+            "name": "BufferMetadata"
           }
         ]
       }
@@ -162,12 +359,37 @@
       "code": 2,
       "name": "SerializationError",
       "msg": "Error serializing account"
+    },
+    {
+      "code": 3,
+      "name": "AlreadyInitialized",
+      "msg": "The account has already been initialized"
+    },
+    {
+      "code": 4,
+      "name": "DerivedKeyInvalid",
+      "msg": "The key for the account is invalid."
+    },
+    {
+      "code": 5,
+      "name": "NotInitialized",
+      "msg": "The account has not yet been initialized"
+    },
+    {
+      "code": 6,
+      "name": "InvalidAuthority",
+      "msg": "The payer does not have authority to perform this action."
+    },
+    {
+      "code": 7,
+      "name": "NumericalOverflow",
+      "msg": "Numerical Overflow"
     }
   ],
   "metadata": {
     "origin": "shank",
     "address": "BUFFCb9CHNtEVhhTmZ8LBdzLgWQbvCxtcy7iNv3RZCLH",
-    "binaryVersion": "0.3.0",
-    "libVersion": "0.3.0"
+    "binaryVersion": "0.4.2",
+    "libVersion": "0.4.2"
   }
 }

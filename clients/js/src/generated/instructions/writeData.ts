@@ -7,7 +7,6 @@
  */
 
 import {
-  ACCOUNT_HEADER_SIZE,
   Context,
   Pda,
   PublicKey,
@@ -17,11 +16,13 @@ import {
 } from '@metaplex-foundation/umi';
 import {
   Serializer,
+  bytes,
   mapSerializer,
   struct,
+  u32,
+  u64,
   u8,
 } from '@metaplex-foundation/umi/serializers';
-import { getBufferSize } from '../accounts';
 import {
   ResolvedAccount,
   ResolvedAccountsWithIndices,
@@ -29,40 +30,59 @@ import {
 } from '../shared';
 
 // Accounts.
-export type CreateInstructionAccounts = {
+export type WriteDataInstructionAccounts = {
   /** The account where data is stored. */
-  buffer: Signer;
+  buffer: PublicKey | Pda;
   /** The account to store the buffer account's metadata in. */
   bufferMetadata: PublicKey | Pda;
-  /** The account paying for the storage fees. */
+  /** The account that will pay for the rent. */
   payer?: Signer;
   /** The authority of the buffer account. */
   authority?: Signer;
-  /** The system program */
+  /** System program */
   systemProgram?: PublicKey | Pda;
 };
 
 // Data.
-export type CreateInstructionData = { discriminator: number };
+export type WriteDataInstructionData = {
+  discriminator: number;
+  offset: bigint;
+  value: Uint8Array;
+};
 
-export type CreateInstructionDataArgs = {};
+export type WriteDataInstructionDataArgs = {
+  offset: number | bigint;
+  value: Uint8Array;
+};
 
-export function getCreateInstructionDataSerializer(): Serializer<
-  CreateInstructionDataArgs,
-  CreateInstructionData
+export function getWriteDataInstructionDataSerializer(): Serializer<
+  WriteDataInstructionDataArgs,
+  WriteDataInstructionData
 > {
-  return mapSerializer<CreateInstructionDataArgs, any, CreateInstructionData>(
-    struct<CreateInstructionData>([['discriminator', u8()]], {
-      description: 'CreateInstructionData',
-    }),
-    (value) => ({ ...value, discriminator: 0 })
-  ) as Serializer<CreateInstructionDataArgs, CreateInstructionData>;
+  return mapSerializer<
+    WriteDataInstructionDataArgs,
+    any,
+    WriteDataInstructionData
+  >(
+    struct<WriteDataInstructionData>(
+      [
+        ['discriminator', u8()],
+        ['offset', u64()],
+        ['value', bytes({ size: u32() })],
+      ],
+      { description: 'WriteDataInstructionData' }
+    ),
+    (value) => ({ ...value, discriminator: 3 })
+  ) as Serializer<WriteDataInstructionDataArgs, WriteDataInstructionData>;
 }
 
+// Args.
+export type WriteDataInstructionArgs = WriteDataInstructionDataArgs;
+
 // Instruction.
-export function create(
+export function writeData(
   context: Pick<Context, 'payer' | 'programs'>,
-  input: CreateInstructionAccounts
+  input: WriteDataInstructionAccounts & WriteDataInstructionArgs
 ): TransactionBuilder {
   // Program ID.
   const programId = context.programs.getPublicKey(
@@ -99,6 +119,9 @@ export function create(
     },
   } satisfies ResolvedAccountsWithIndices;
 
+  // Arguments.
+  const resolvedArgs: WriteDataInstructionArgs = { ...input };
+
   // Default values.
   if (!resolvedAccounts.payer.value) {
     resolvedAccounts.payer.value = context.payer;
@@ -124,10 +147,12 @@ export function create(
   );
 
   // Data.
-  const data = getCreateInstructionDataSerializer().serialize({});
+  const data = getWriteDataInstructionDataSerializer().serialize(
+    resolvedArgs as WriteDataInstructionDataArgs
+  );
 
   // Bytes Created On Chain.
-  const bytesCreatedOnChain = getBufferSize() + ACCOUNT_HEADER_SIZE;
+  const bytesCreatedOnChain = 0;
 
   return transactionBuilder([
     { instruction: { keys, programId, data }, signers, bytesCreatedOnChain },

@@ -7,7 +7,6 @@
  */
 
 import {
-  ACCOUNT_HEADER_SIZE,
   Context,
   Pda,
   PublicKey,
@@ -19,9 +18,9 @@ import {
   Serializer,
   mapSerializer,
   struct,
+  u64,
   u8,
 } from '@metaplex-foundation/umi/serializers';
-import { getBufferSize } from '../accounts';
 import {
   ResolvedAccount,
   ResolvedAccountsWithIndices,
@@ -29,40 +28,54 @@ import {
 } from '../shared';
 
 // Accounts.
-export type CreateInstructionAccounts = {
+export type AllocateInstructionAccounts = {
   /** The account where data is stored. */
-  buffer: Signer;
+  buffer: PublicKey | Pda;
   /** The account to store the buffer account's metadata in. */
   bufferMetadata: PublicKey | Pda;
-  /** The account paying for the storage fees. */
+  /** The account that will pay for the rent. */
   payer?: Signer;
   /** The authority of the buffer account. */
   authority?: Signer;
-  /** The system program */
+  /** System program */
   systemProgram?: PublicKey | Pda;
 };
 
 // Data.
-export type CreateInstructionData = { discriminator: number };
+export type AllocateInstructionData = {
+  discriminator: number;
+  targetSize: bigint;
+};
 
-export type CreateInstructionDataArgs = {};
+export type AllocateInstructionDataArgs = { targetSize: number | bigint };
 
-export function getCreateInstructionDataSerializer(): Serializer<
-  CreateInstructionDataArgs,
-  CreateInstructionData
+export function getAllocateInstructionDataSerializer(): Serializer<
+  AllocateInstructionDataArgs,
+  AllocateInstructionData
 > {
-  return mapSerializer<CreateInstructionDataArgs, any, CreateInstructionData>(
-    struct<CreateInstructionData>([['discriminator', u8()]], {
-      description: 'CreateInstructionData',
-    }),
-    (value) => ({ ...value, discriminator: 0 })
-  ) as Serializer<CreateInstructionDataArgs, CreateInstructionData>;
+  return mapSerializer<
+    AllocateInstructionDataArgs,
+    any,
+    AllocateInstructionData
+  >(
+    struct<AllocateInstructionData>(
+      [
+        ['discriminator', u8()],
+        ['targetSize', u64()],
+      ],
+      { description: 'AllocateInstructionData' }
+    ),
+    (value) => ({ ...value, discriminator: 2 })
+  ) as Serializer<AllocateInstructionDataArgs, AllocateInstructionData>;
 }
 
+// Args.
+export type AllocateInstructionArgs = AllocateInstructionDataArgs;
+
 // Instruction.
-export function create(
+export function allocate(
   context: Pick<Context, 'payer' | 'programs'>,
-  input: CreateInstructionAccounts
+  input: AllocateInstructionAccounts & AllocateInstructionArgs
 ): TransactionBuilder {
   // Program ID.
   const programId = context.programs.getPublicKey(
@@ -99,6 +112,9 @@ export function create(
     },
   } satisfies ResolvedAccountsWithIndices;
 
+  // Arguments.
+  const resolvedArgs: AllocateInstructionArgs = { ...input };
+
   // Default values.
   if (!resolvedAccounts.payer.value) {
     resolvedAccounts.payer.value = context.payer;
@@ -124,10 +140,12 @@ export function create(
   );
 
   // Data.
-  const data = getCreateInstructionDataSerializer().serialize({});
+  const data = getAllocateInstructionDataSerializer().serialize(
+    resolvedArgs as AllocateInstructionDataArgs
+  );
 
   // Bytes Created On Chain.
-  const bytesCreatedOnChain = getBufferSize() + ACCOUNT_HEADER_SIZE;
+  const bytesCreatedOnChain = 0;
 
   return transactionBuilder([
     { instruction: { keys, programId, data }, signers, bytesCreatedOnChain },

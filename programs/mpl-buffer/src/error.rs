@@ -17,6 +17,21 @@ pub enum MplBufferError {
     /// 2 - Error serializing account
     #[error("Error serializing account")]
     SerializationError,
+    /// 3 - The account passed in was already initialized.
+    #[error("The account has already been initialized")]
+    AlreadyInitialized,
+    /// 4 - The key for the JSON metadata account is invalid.
+    #[error("The key for the account is invalid.")]
+    DerivedKeyInvalid,
+    /// 5 - The account passed isn't initialized.
+    #[error("The account has not yet been initialized")]
+    NotInitialized,
+    /// 6 - The payer does not have authority to perform this action.
+    #[error("The payer does not have authority to perform this action.")]
+    InvalidAuthority,
+    /// 7 - Numerical Overflow
+    #[error("Numerical Overflow")]
+    NumericalOverflow,
 }
 
 impl PrintProgramError for MplBufferError {

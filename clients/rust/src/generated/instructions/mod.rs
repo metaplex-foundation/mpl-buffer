@@ -5,6 +5,14 @@
 //! [https://github.com/metaplex-foundation/kinobi]
 //!
 
+pub(crate) mod r#allocate;
+pub(crate) mod r#clear_data;
+pub(crate) mod r#close;
 pub(crate) mod r#create;
+pub(crate) mod r#write_data;
 
+pub use self::r#allocate::*;
+pub use self::r#clear_data::*;
+pub use self::r#close::*;
 pub use self::r#create::*;
+pub use self::r#write_data::*;

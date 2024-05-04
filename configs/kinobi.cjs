@@ -18,12 +18,11 @@ kinobi.update(
 // Update accounts.
 kinobi.update(
   new k.updateAccountsVisitor({
-    myPdaAccount: {
+    bufferMetadata: {
       seeds: [
-        k.constantPdaSeedNodeFromString("myPdaAccount"),
+        k.constantPdaSeedNodeFromString("Buffer"),
         k.programIdPdaSeedNode(),
-        k.variablePdaSeedNode("authority", k.publicKeyTypeNode(), "The address of the authority"),
-        k.variablePdaSeedNode("name", k.stringTypeNode(), "The name of the account"),
+        k.variablePdaSeedNode("buffer", k.publicKeyTypeNode(), "The address of the buffer account"),
       ],
     },
   })
@@ -34,7 +33,7 @@ kinobi.update(
   new k.updateInstructionsVisitor({
     create: {
       byteDeltas: [
-        k.instructionByteDeltaNode(k.accountLinkNode("myAccount")),
+        k.instructionByteDeltaNode(k.accountLinkNode("buffer")),
       ],
     },
   })
@@ -44,8 +43,8 @@ kinobi.update(
 const key = (name) => ({ field: "key", value: k.enumValueNode("Key", name) });
 kinobi.update(
   new k.setAccountDiscriminatorFromFieldVisitor({
-    myAccount: key("MyAccount"),
-    myPdaAccount: key("MyPdaAccount"),
+    myAccount: key("Uninitialized"),
+    myPdaAccount: key("BufferMetadataAccount"),
   })
 );
 
