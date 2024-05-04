@@ -1,6 +1,6 @@
-# Mpl Project Name
+# Mpl Buffer
 
-My project description
+A simple program for writing a buffer of bytes.
 
 ## Building
 
